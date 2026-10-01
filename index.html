@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>QR Code Generator & Designer</title>
+<style>
+:root{--bg:#f4f5f8;--card:#fff;--fg:#14161c;--mut:#626b7a;--bd:#dde1e8;--ac:#4f46e5;--acfg:#fff;--err:#c62828;--warn:#8a5a00;--warnbg:#fff4d6;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1115;--card:#181b22;--fg:#eceef3;--mut:#98a1b3;--bd:#2b303b;--ac:#818cf8;--acfg:#0f1115;--err:#ff8a80;--warn:#ffd27a;--warnbg:#3a2f12}}
+:root[data-theme="dark"]{--bg:#0f1115;--card:#181b22;--fg:#eceef3;--mut:#98a1b3;--bd:#2b303b;--ac:#818cf8;--acfg:#0f1115;--err:#ff8a80;--warn:#ffd27a;--warnbg:#3a2f12}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1050px;margin:0 auto;padding:16px}
+header{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
+h1{font-size:1.4rem;margin:0;background:linear-gradient(90deg,var(--ac),#e11d48,var(--ac));background-size:200% auto;animation:shift 6s linear infinite;-webkit-background-clip:text;background-clip:text;color:transparent}h2{font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);margin:0 0 10px}
+.grid{display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 1px 2px rgba(0,0,0,.05),0 6px 20px rgba(0,0,0,.05)}
+.prev{position:sticky;top:12px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px}
+button,select,input,textarea{font:inherit;color:var(--fg)}
+button{cursor:pointer;background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:7px 12px}
+button.on{background:var(--ac);color:var(--acfg);border-color:var(--ac)}
+button.pri{background:var(--ac);color:var(--acfg);border-color:var(--ac)}
+button:disabled{opacity:.5;cursor:not-allowed}
+.f{display:block;margin-bottom:10px;font-size:.85rem;color:var(--mut)}
+.f input:not([type=checkbox]):not([type=range]):not([type=color]),.f select,.f textarea{display:block;width:100%;margin-top:4px;padding:8px;background:var(--bg);border:1px solid var(--bd);border-radius:8px}
+.f input[type=range]{width:100%}.f input[type=color]{display:block;width:100%;height:36px;margin-top:4px;border:1px solid var(--bd);border-radius:8px;background:none;padding:2px}
+.f.bad input,.f.bad textarea{border-color:var(--err)}
+.e{color:var(--err);font-size:.8rem;margin-top:3px;display:block}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pre{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+.pre button{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:.8rem;padding:8px}
+.sw{width:32px;height:32px;border-radius:6px;border:1px solid var(--bd);display:flex;align-items:center;justify-content:center}
+.sw i{width:14px;height:14px;border-radius:3px;display:block}
+.box{position:relative;display:flex;justify-content:center;align-items:center;min-height:200px;background:repeating-conic-gradient(var(--bd) 0 25%,transparent 0 50%) 0 0/16px 16px;border-radius:8px;padding:10px;overflow:auto}
+canvas{max-width:100%;height:auto;display:block}
+.ph{color:var(--mut);text-align:center;background:var(--card);padding:10px;border-radius:8px}
+.warn{background:var(--warnbg);color:var(--warn);border-radius:8px;padding:8px 10px;margin-top:8px;font-size:.85rem}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.rec{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.rec>div{flex:0 0 auto;width:92px;text-align:center;font-size:.72rem;color:var(--mut)}
+.rec img{width:92px;height:92px;border-radius:6px;border:1px solid var(--bd);cursor:pointer;display:block;image-rendering:pixelated}
+.rec span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.toast{color:var(--ac);font-size:.85rem;margin-top:6px;min-height:1.2em}
+@keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes pop{0%{transform:scale(.85);opacity:.4}60%{transform:scale(1.04)}100%{transform:scale(1);opacity:1}}
+@keyframes sweep{0%{top:0;opacity:1}90%{opacity:1}100%{top:100%;opacity:0}}
+@keyframes slide{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+@keyframes shift{to{background-position:200% 0}}
+@keyframes drift{0%,100%{transform:translate(0,0)}50%{transform:translate(4%,3%) scale(1.1)}}
+body::before{content:"";position:fixed;inset:-10%;z-index:-1;pointer-events:none;background:radial-gradient(40% 40% at 15% 20%,color-mix(in srgb,var(--ac) 22%,transparent),transparent),radial-gradient(35% 35% at 85% 70%,rgba(225,29,72,.14),transparent);animation:drift 16s ease-in-out infinite}
+.card{animation:up .5s both}.grid>div>.card:nth-child(2),.prev>.card:nth-child(2){animation-delay:.08s}.grid>div>.card:nth-child(3){animation-delay:.16s}
+canvas.pop{animation:pop .45s ease-out}
+.scan{position:absolute;left:0;right:0;height:3px;z-index:2;pointer-events:none;background:linear-gradient(90deg,transparent,var(--ac),transparent);box-shadow:0 0 12px var(--ac);animation:sweep .9s ease-out forwards}
+.warn,.ok{animation:slide .3s both}.ok{animation-name:pop}
+.toast:not(:empty){animation:slide .25s}
+.pre button,.tabs button,.acts button{transition:transform .15s,background .15s,box-shadow .15s}
+.pre button:hover,.tabs button:hover,.acts button:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 4px 10px rgba(0,0,0,.12)}
+.rec>div{animation:pop .35s both}.rec img{transition:transform .15s}.rec img:hover{transform:scale(1.07)}
+.sw{transition:transform .2s}.pre button:hover .sw{transform:rotate(-8deg) scale(1.08)}
+@media(prefers-reduced-motion:reduce){*,::before{animation:none!important;transition:none!important}}
+button{transition:transform .1s,background .15s}button:active:not(:disabled){transform:scale(.97)}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.ok{background:rgba(46,160,67,.15);border-left:3px solid #2ea043;color:var(--fg);border-radius:8px;padding:8px 10px;margin-top:8px;font-size:.85rem}
+.payload{font-size:.75rem;color:var(--mut);margin-top:8px;word-break:break-all;max-height:3.6em;overflow:hidden}
+@media(max-width:800px){.grid{grid-template-columns:1fr}.prev{position:static;order:-1}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<script>
+const {useState,useEffect,useRef,useMemo}=React, h=React.createElement;
+qrcode.stringToBytes=qrcode.stringToBytesFuncs['UTF-8'];
+const TYPES=[['url','URL'],['text','Text'],['email','Email'],['phone','Phone'],['wifi','Wi-Fi']];
+const PRESETS=[['Classic','#000000','#ffffff','square'],['Midnight','#e8eaff','#141a3a','rounded'],['Ocean','#0b4f8a','#e6f3ff','rounded'],['Forest','#1b5e20','#f1f8e9','square'],['Sunset','#b3261e','#fff3e0','dots'],['Indigo','#4f46e5','#ffffff','rounded'],['Aurora','#6d28d9','#ffffff','rounded','#0ea5e9'],['Ember','#dc2626','#fff7ed','dots','#f59e0b']];
+const DEF={type:'url',url:'',text:'',to:'',subject:'',body:'',phone:'',ssid:'',pw:'',enc:'WPA',hid:false,size:300,fg:'#000000',bg:'#ffffff',ecc:'M',margin:4,st:'square',preset:'Classic',grad:false,fg2:'#e11d48',logo:'',logoSize:20,eye:'square',eyeOn:false,eyec:'#4f46e5'};
+const KEY='qr-recent-v1';
+
+function build(s){
+  const e={};let t='';
+  if(s.type==='url'){
+    const v=s.url.trim();
+    if(!v)e.url='Enter a URL.';
+    else{const u=/^[a-z][a-z0-9+.-]*:\/\//i.test(v)?v:'https://'+v;
+      try{const p=new URL(u);if(!/^https?:$/.test(p.protocol)||!p.hostname.includes('.'))throw 0;t=u}catch(_){e.url='Enter a valid URL, e.g. https://example.com'}}
+  }else if(s.type==='text'){
+    if(!s.text.trim())e.text='Enter some text.';
+    else if(s.text.length>1000)e.text='Text is too long (max 1000 characters).';
+    else t=s.text;
+  }else if(s.type==='email'){
+    const v=s.to.trim();
+    if(!v)e.to='Enter an email address.';
+    else if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v))e.to='Enter a valid email address.';
+    else{const q=[];if(s.subject)q.push('subject='+encodeURIComponent(s.subject));if(s.body)q.push('body='+encodeURIComponent(s.body));t='mailto:'+v+(q.length?'?'+q.join('&'):'')}
+  }else if(s.type==='phone'){
+    const v=s.phone.replace(/[\s().-]/g,'');
+    if(!v)e.phone='Enter a phone number.';
+    else if(!/^\+?\d{6,15}$/.test(v))e.phone='Use 6–15 digits, optionally starting with +.';
+    else t='tel:'+v;
+  }else{
+    const esc=x=>x.replace(/([\\;,:"])/g,'\\$1');
+    if(!s.ssid.trim())e.ssid='Enter the network name (SSID).';
+    else if(s.ssid.length>32)e.ssid='SSID can be at most 32 characters.';
+    if(s.enc!=='nopass'){
+      if(!s.pw)e.pw='Enter the password.';
+      else if(s.enc==='WPA'&&(s.pw.length<8||s.pw.length>63))e.pw='WPA passwords are 8–63 characters.';
+    }
+    if(!Object.keys(e).length)t='WIFI:T:'+s.enc+';S:'+esc(s.ssid)+';P:'+esc(s.enc==='nopass'?'':s.pw)+';H:'+s.hid+';;';
+  }
+  return {e,t};
+}
+function mk(text,ecc){const q=qrcode(0,ecc);q.addData(text,'Byte');q.make();return q}
+function draw(cv,q,o,size,img){
+  const n=q.getModuleCount(),c=cv.getContext('2d');
+  cv.width=cv.height=size;c.fillStyle=o.bg;c.fillRect(0,0,size,size);let fs=o.fg;
+  if(o.grad){const g=c.createLinearGradient(0,0,size,size);g.addColorStop(0,o.fg);g.addColorStop(1,o.fg2);fs=g}
+  c.fillStyle=fs;
+  const cell=size/(n+2*o.margin),off=o.margin*cell;
+  for(let r=0;r<n;r++)for(let k=0;k<n;k++){
+    if(!q.isDark(r,k)||(r<7&&k<7)||(r<7&&k>=n-7)||(r>=n-7&&k<7))continue;
+    const x=off+k*cell,y=off+r*cell;
+    if(o.st==='dots'){c.beginPath();c.arc(x+cell/2,y+cell/2,cell*.46,0,7);c.fill()}
+    else if(o.st==='rounded'&&c.roundRect){c.beginPath();c.roundRect(x,y,cell,cell,cell*.3);c.fill()}
+    else{const x0=Math.round(x),y0=Math.round(y);c.fillRect(x0,y0,Math.round(x+cell)-x0,Math.round(y+cell)-y0)}
+  }
+  const sh=(x,y,w,t)=>{if(t==='circle'){c.moveTo(x+w,y+w/2);c.arc(x+w/2,y+w/2,w/2,0,7)}else if(t==='rounded'&&c.roundRect)c.roundRect(x,y,w,w,w*.28);else c.rect(x,y,w,w)};
+  c.fillStyle=o.eyeOn?o.eyec:fs;
+  for(const [ox,oy] of [[0,0],[n-7,0],[0,n-7]]){const x=off+ox*cell,y=off+oy*cell;c.beginPath();sh(x,y,7*cell,o.eye);sh(x+cell,y+cell,5*cell,o.eye);c.fill('evenodd');c.beginPath();sh(x+2*cell,y+2*cell,3*cell,o.eye);c.fill()}
+  if(img&&o.logo){const L=size*o.logoSize/100,p=L*.12,x=(size-L)/2;c.fillStyle=o.bg;c.fillRect(x-p,x-p,L+2*p,L+2*p);const k=Math.min(L/img.width,L/img.height),w=img.width*k,hh=img.height*k;c.drawImage(img,(size-w)/2,(size-hh)/2,w,hh)}
+}
+function logoSvg(o,size){const L=size*o.logoSize/100,p=L*.12,x=(size-L)/2;return `<rect x="${x-p}" y="${x-p}" width="${L+2*p}" height="${L+2*p}" fill="${o.bg}"/><image href="${o.logo}" x="${x}" y="${x}" width="${L}" height="${L}" preserveAspectRatio="xMidYMid meet"/>`}
+function eyeSvg(o,n,cell,off){const f=o.eyeOn?o.eyec:(o.grad?'url(#g)':o.fg),e=(x,y,w,c)=>o.eye==='circle'?`<circle cx="${x+w/2}" cy="${y+w/2}" r="${w/2}" fill="${c}"/>`:`<rect x="${x}" y="${y}" width="${w}" height="${w}"${o.eye==='rounded'?` rx="${w*.28}"`:''} fill="${c}"/>`;return [[0,0],[n-7,0],[0,n-7]].map(([a,b])=>{const x=off+a*cell,y=off+b*cell;return e(x,y,7*cell,f)+e(x+cell,y+cell,5*cell,o.bg)+e(x+2*cell,y+2*cell,3*cell,f)}).join('')}
+function svgOf(q,o,size){
+  const n=q.getModuleCount(),cell=size/(n+2*o.margin),off=o.margin*cell;let d='';
+  for(let r=0;r<n;r++)for(let k=0;k<n;k++)if(q.isDark(r,k)&&!((r<7&&k<7)||(r<7&&k>=n-7)||(r>=n-7&&k<7))){
+    const x=+(off+k*cell).toFixed(3),y=+(off+r*cell).toFixed(3),w=+cell.toFixed(3);
+    d+=o.st==='dots'?`<circle cx="${x+w/2}" cy="${y+w/2}" r="${+(w*.46).toFixed(3)}"/>`:`<rect x="${x}" y="${y}" width="${w+(o.st==='square'?.4:0)}" height="${w+(o.st==='square'?.4:0)}"${o.st==='rounded'?` rx="${+(w*.3).toFixed(3)}"`:''}/>`;
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">${o.grad?`<defs><linearGradient id="g" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="${size}" y2="${size}"><stop offset="0" stop-color="${o.fg}"/><stop offset="1" stop-color="${o.fg2}"/></linearGradient></defs>`:''}<rect width="${size}" height="${size}" fill="${o.bg}"/><g fill="${o.grad?'url(#g)':o.fg}">${d}</g>${eyeSvg(o,n,cell,off)}${o.logo?logoSvg(o,size):''}</svg>`;
+}
+const lum=hex=>{const v=[1,3,5].map(i=>{const c=parseInt(hex.substr(i,2),16)/255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)});return .2126*v[0]+.7152*v[1]+.0722*v[2]};
+function warnings(s,n){
+  const w=[],a=lum(s.fg),b=lum(s.bg),cr=(Math.max(a,b)+.05)/(Math.min(a,b)+.05),a2=lum(s.fg2),cr2=(Math.max(a2,b)+.05)/(Math.min(a2,b)+.05);
+  if(Math.min(cr,s.grad?cr2:99)<3)w.push('Low contrast ('+Math.min(cr,s.grad?cr2:99).toFixed(1)+':1). Aim for at least 3:1 or scanners may fail.');
+  if(a>b||(s.grad&&a2>b))w.push('Light modules on a dark background (inverted). Many scanners cannot read this.');
+  if(s.margin<2)w.push('Quiet zone is very small. A margin of 4 modules is recommended.');
+  if(s.size<200)w.push('Small size. Codes under 200px can be hard to scan.');
+  if(n/(s.size)>0.25&&s.size<n*4)w.push('Modules are tiny at this size; increase the size.');
+  if(s.st==='dots')w.push('Dot style is less reliable on some scanners. Test before printing.');
+  if(s.ecc==='L'&&n>45)w.push('Low error correction on a dense code. Consider M or Q.');
+  if(s.eyeOn){const a3=lum(s.eyec);if((Math.max(a3,b)+.05)/(Math.min(a3,b)+.05)<3)w.push('Eye color has low contrast with the background.')}
+  if(s.logo&&s.ecc!=='H')w.push('Use High error correction when a logo covers the center.');
+  if(s.logo&&s.logoSize>25)w.push('Logo is large and hides too much data. Keep it at 25% or less.');
+  return w;
+}
+const thumbOf=(q,o)=>{const c=document.createElement('canvas');draw(c,q,o,120);return c.toDataURL()};
+const loadRec=()=>{try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch(_){return[]}};
+const saveRec=l=>{try{localStorage.setItem(KEY,JSON.stringify(l))}catch(_){}};
+const labelOf=(s,t)=>s.type==='wifi'?'Wi-Fi: '+s.ssid:t.replace(/^(mailto:|tel:)/,'');
+
+function App(){
+  const [s,setS]=useState(DEF),[touched,setT]=useState({}),[rec,setRec]=useState(loadRec),[msg,setMsg]=useState('');
+  const [theme,setTheme]=useState(()=>{try{return localStorage.getItem('qr-theme')||''}catch(_){return''}});
+  const cv=useRef(null),[img,setImg]=useState(null),fileRef=useRef(null),[ver,setVer]=useState(null);
+  const set=p=>setS(o=>({...o,...p})), touch=k=>setT(o=>({...o,[k]:1}));
+  useEffect(()=>{if(theme)document.documentElement.dataset.theme=theme;try{localStorage.setItem('qr-theme',theme)}catch(_){}},[theme]);
+  const {e,t}=useMemo(()=>build(s),[s]);
+  const r=useMemo(()=>{
+    if(!t)return {};
+    try{return {q:mk(t,s.ecc)}}catch(_){return {err:'Content is too long for this error-correction level. Shorten it or choose a lower level.'}}
+  },[t,s.ecc]);
+  useEffect(()=>{if(!s.logo){setImg(null);return}const i=new Image();i.onload=()=>setImg(i);i.src=s.logo},[s.logo]);
+  useEffect(()=>{if(r.q&&cv.current)draw(cv.current,r.q,s,s.size,img)},[r,s,img]);
+  useEffect(()=>{setVer(null);if(!r.q||!cv.current||typeof jsQR==='undefined')return;const id=setTimeout(()=>{try{const c=cv.current,d=c.getContext('2d').getImageData(0,0,c.width,c.height),res=jsQR(d.data,d.width,d.height);setVer(res?(res.data===t?'ok':'diff'):'fail')}catch(_){}},200);return()=>clearTimeout(id)},[r,s,img,t]);
+  useEffect(()=>{const c=cv.current;if(!c)return;c.classList.remove('pop');void c.offsetWidth;c.classList.add('pop')},[t]);
+  useEffect(()=>{
+    if(!r.q)return;
+    const id=setTimeout(()=>{
+      const s2={...s,logo:''},sig=JSON.stringify(s2);
+      setRec(l=>{
+        const nl=[{id:Date.now(),s:s2,sig,label:labelOf(s,t),thumb:thumbOf(r.q,s2)},...l.filter(x=>x.sig!==sig)].slice(0,8);
+        saveRec(nl);return nl;
+      });
+    },1500);
+    return ()=>clearTimeout(id);
+  },[r,s,t]);
+  const say=m=>{setMsg(m);setTimeout(()=>setMsg(''),2500)};
+  const fileName='qrcode-'+s.type;
+  const dl=(href,name)=>{const a=document.createElement('a');a.href=href;a.download=name;document.body.appendChild(a);a.click();a.remove()};
+  const png=()=>{cv.current.toBlob(b=>{const u=URL.createObjectURL(b);dl(u,fileName+'.png');setTimeout(()=>URL.revokeObjectURL(u),3000);say('PNG downloaded.')})};
+  const svg=()=>{const u=URL.createObjectURL(new Blob([svgOf(r.q,s,s.size)],{type:'image/svg+xml'}));dl(u,fileName+'.svg');setTimeout(()=>URL.revokeObjectURL(u),3000);say('SVG downloaded.')};
+  const copy=()=>cv.current.toBlob(async b=>{try{await navigator.clipboard.write([new ClipboardItem({'image/png':b})]);say('Copied to clipboard.')}catch(_){say('Copy is not supported in this browser.')}});
+  const show=k=>(touched[k]||s[k])&&e[k];
+  const F=(label,k,props,tag)=>h('label',{className:'f'+(show(k)?' bad':'')},label,
+    h(tag||'input',{value:s[k],onChange:ev=>set({[k]:ev.target.value}),onBlur:()=>touch(k),...props}),
+    show(k)&&h('span',{className:'e',role:'alert'},e[k]));
+  const R=(label,k,min,max,step,unit)=>h('label',{className:'f'},label+': '+s[k]+(unit||''),h('input',{type:'range',min,max,step,value:s[k],onChange:ev=>set({[k]:+ev.target.value})}));
+  const pickLogo=ev=>{const f=ev.target.files[0];ev.target.value='';if(!f)return;if(!/^image\//.test(f.type))return say('Please choose an image file.');if(f.size>500000)return say('Logo must be under 500 KB.');const fr=new FileReader();fr.onload=()=>set({logo:fr.result,ecc:'H'});fr.readAsDataURL(f)};
+  const warns=r.q?warnings(s,r.q.getModuleCount()):[];
+  const tabs=h('div',{className:'tabs'},TYPES.map(([k,l])=>h('button',{key:k,className:s.type===k?'on':'',onClick:()=>{set({type:k});setT({})}},l)));
+  const inputs={
+    url:()=>F('URL','url',{type:'text',inputMode:'url',placeholder:'https://example.com'}),
+    text:()=>F('Text','text',{rows:3,placeholder:'Any text…'},'textarea'),
+    email:()=>[F('Email address','to',{key:'to',type:'email',placeholder:'name@example.com'}),F('Subject (optional)','subject',{key:'s'}),F('Message (optional)','body',{key:'b',rows:2},'textarea')],
+    phone:()=>F('Phone number','phone',{type:'tel',placeholder:'+91 98765 43210'}),
+    wifi:()=>[F('Network name (SSID)','ssid',{key:'ss'}),
+      h('label',{key:'enc',className:'f'},'Security',h('select',{value:s.enc,onChange:ev=>set({enc:ev.target.value})},h('option',{value:'WPA'},'WPA/WPA2/WPA3'),h('option',{value:'WEP'},'WEP'),h('option',{value:'nopass'},'None'))),
+      s.enc!=='nopass'&&F('Password','pw',{key:'pw',type:'text'}),
+      h('label',{key:'hid',className:'f'},h('input',{type:'checkbox',checked:s.hid,onChange:ev=>set({hid:ev.target.checked})}),' Hidden network')]
+  }[s.type]();
+  return h('div',{className:'wrap'},
+    h('header',null,h('h1',null,'QR Code Generator & Designer'),h('button',{onClick:()=>setTheme((document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'))==='dark'?'light':'dark'),'aria-label':'Toggle theme'},'◐ Theme')),
+    h('div',{className:'grid'},
+      h('div',null,
+        h('div',{className:'card'},h('h2',null,'1. Content'),tabs,h('div',{style:{marginTop:12}},inputs)),
+        h('div',{className:'card'},h('h2',null,'2. Presets'),h('div',{className:'pre'},PRESETS.map(([n,fg,bg,st,g])=>
+          h('button',{key:n,className:s.preset===n?'on':'',onClick:()=>set({fg,bg,st,preset:n,grad:!!g,fg2:g||s.fg2})},h('span',{className:'sw',style:{background:bg}},h('i',{style:{background:g?`linear-gradient(135deg,${fg},${g})`:fg}})),n)))),
+        h('div',{className:'card'},h('h2',null,'3. Customize'),
+          R('Size','size',120,800,10,'px'),R('Margin','margin',0,10,1,' modules'),
+          h('div',{className:'row'},
+            h('label',{className:'f'},'Foreground',h('input',{type:'color',value:s.fg,onChange:ev=>set({fg:ev.target.value,preset:'Custom'})})),
+            h('label',{className:'f'},'Background',h('input',{type:'color',value:s.bg,onChange:ev=>set({bg:ev.target.value,preset:'Custom'})}))),
+          h('div',{className:'row'},
+            h('label',{className:'f'},'Error correction',h('select',{value:s.ecc,onChange:ev=>set({ecc:ev.target.value})},[['L','Low (7%)'],['M','Medium (15%)'],['Q','Quartile (25%)'],['H','High (30%)']].map(([v,l])=>h('option',{key:v,value:v},l)))),
+            h('label',{className:'f'},'Module style',h('select',{value:s.st,onChange:ev=>set({st:ev.target.value,preset:'Custom'})},h('option',{value:'square'},'Square'),h('option',{value:'rounded'},'Rounded'),h('option',{value:'dots'},'Dots')))),
+          h('label',{className:'f'},h('input',{type:'checkbox',checked:s.grad,onChange:ev=>set({grad:ev.target.checked,preset:'Custom'})}),' Gradient foreground'),
+          s.grad&&h('label',{className:'f'},'Gradient end color',h('input',{type:'color',value:s.fg2,onChange:ev=>set({fg2:ev.target.value,preset:'Custom'})})),
+          h('div',{className:'row'},h('label',{className:'f'},'Corner eye style',h('select',{value:s.eye,onChange:ev=>set({eye:ev.target.value})},h('option',{value:'square'},'Square'),h('option',{value:'rounded'},'Rounded'),h('option',{value:'circle'},'Circle'))),h('label',{className:'f'},h('input',{type:'checkbox',checked:s.eyeOn,onChange:ev=>set({eyeOn:ev.target.checked})}),' Custom eye color',s.eyeOn&&h('input',{type:'color',value:s.eyec,onChange:ev=>set({eyec:ev.target.value})}))),
+          h('div',{className:'f'},'Logo (center)',h('div',{className:'acts',style:{marginTop:4}},h('input',{ref:fileRef,type:'file',accept:'image/*',onChange:pickLogo,style:{display:'none'}}),h('button',{onClick:()=>fileRef.current.click()},s.logo?'Change logo':'Upload logo'),s.logo&&h('button',{onClick:()=>set({logo:''})},'Remove'))),
+          s.logo&&R('Logo size','logoSize',10,35,1,'%'))),
+      h('div',{className:'prev'},
+        h('div',{className:'card'},h('h2',null,'Preview'),
+          h('div',{className:'box'},
+            r.q&&h('div',{className:'scan',key:t}),
+            h('canvas',{ref:cv,style:{display:r.q?'block':'none'},role:'img','aria-label':'Generated QR code'}),
+            !r.q&&h('div',{className:'ph'},r.err||'Fill in the form to see your QR code.',!r.err&&h('div',{style:{marginTop:8}},h('button',{onClick:()=>set({type:'url',url:'https://example.com'})},'Try an example')))),
+          ver==='ok'&&h('div',{className:'ok'},'✓ Scan check passed: a test decoder read this code correctly.'),
+          ver==='fail'&&h('div',{className:'warn'},'⚠ A test decoder could not read this code. Try more contrast, a bigger margin, a simpler style or higher error correction.'),
+          ver==='diff'&&h('div',{className:'warn'},'⚠ A test decoder read different content than expected.'),
+          r.q&&h('div',{className:'payload',title:t},'Encodes: '+t),
+          r.err&&h('div',{className:'warn',role:'alert'},r.err),
+          warns.map((w,i)=>h('div',{key:i,className:'warn'},'⚠ '+w)),
+          h('div',{className:'acts'},
+            h('button',{className:'pri',disabled:!r.q,onClick:png},'Download PNG'),
+            h('button',{disabled:!r.q,onClick:svg},'SVG'),
+            h('button',{disabled:!r.q,onClick:copy},'Copy'),
+            h('button',{onClick:()=>{setS(DEF);setT({})}},'Reset')),
+          h('div',{className:'toast','aria-live':'polite'},msg)),
+        h('div',{className:'card'},h('h2',null,'Recent'),
+          rec.length?h('div',{className:'rec'},rec.map(x=>h('div',{key:x.id},
+            h('img',{src:x.thumb,alt:x.label,title:'Click to reuse',onClick:()=>{setS({...DEF,...x.s});setT({})}}),
+            h('span',null,x.label),
+            h('button',{style:{padding:'1px 6px',fontSize:'.7rem'},onClick:()=>setRec(l=>{const nl=l.filter(y=>y.id!==x.id);saveRec(nl);return nl})},'✕')))):
+            h('div',{className:'ph',style:{padding:0}},'Your recent codes appear here.'),
+          rec.length>0&&h('div',{className:'acts'},h('button',{onClick:()=>{setRec([]);saveRec([])}},'Clear all'))))));
+}
+ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+</script>
+</body>
+</html>
